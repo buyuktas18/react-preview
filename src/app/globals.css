@@ -3,8 +3,34 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg-color: #ffffff;
+  --chat-bg: #f3f4f6;
+  --user-bg: #e0f2fe;
+  --ai-bg: #e5e7eb;
+  --user-text: #1d4ed8;
+  --ai-text: #374151;
+  --input-bg: #ffffff;
+  --input-text: #111827;
+  --input-border: #d1d5db;
+  --button-bg: #1d4ed8;
+  --button-text: #ffffff;
+  --button-disabled: #9ca3af;
+}
+
+/* Dark mode styles */
+[data-theme="dark"] {
+  --bg-color: #111827;
+  --chat-bg: #1f2937;
+  --user-bg: #2563eb;
+  --ai-bg: #374151;
+  --user-text: #93c5fd;
+  --ai-text: #e5e7eb;
+  --input-bg: #1f2937;
+  --input-text: #ffffff;
+  --input-border: #374151;
+  --button-bg: #2563eb;
+  --button-text: #ffffff;
+  --button-disabled: #4b5563;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -15,7 +41,57 @@
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--bg-color);
+  color: var(--input-text);
+  font-family: "Inter", sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.dot-flashing {
+  position: relative;
+  width: 10px;
+  height: 10px;
+  margin-left: 10px;
+  border-radius: 50%;
+  background-color: #333;
+  animation: dot-flashing 1.5s infinite ease-in-out;
+}
+
+.dot-flashing::before,
+.dot-flashing::after {
+  content: "";
+  display: inline-block;
+  position: absolute;
+  top: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #333;
+  animation: dot-flashing 1.5s infinite ease-in-out;
+}
+
+.dot-flashing::before {
+  left: 15px;
+  animation-delay: 0.2s;
+}
+
+.dot-flashing::after {
+  left: 30px;
+  animation-delay: 0.4s;
+}
+
+@keyframes dot-flashing {
+  0% {
+    background-color: #333;
+  }
+  50%,
+  100% {
+    background-color: #aaa;
+  }
 }

@@ -1,101 +1,256 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import React, { useState, useEffect } from "react";
+import { Sandpack } from "@codesandbox/sandpack-react";
+
+export default function PreviewPage(): JSX.Element {
+  const [reactCode, setReactCode] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [messages, setMessages] = useState<{ role: string; content: string }[]>([
+    { role: "system", content: "You can instruct me to modify the React code." },
+  ]);
+  const [chatbotInput, setChatbotInput] = useState<string>("");
+  const [chatbotLoading, setChatbotLoading] = useState<boolean>(false);
+
+  useEffect(() => {
+    async function fetchReactCode() {
+      try {
+        const response = await fetch("/api/save-code");
+        if (!response.ok) throw new Error("Failed to fetch the code.");
+        const data = await response.json();
+        setReactCode(data.reactCode);
+      } catch (err) {
+        setError("Error occurred while fetching the code.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchReactCode();
+  }, []);
+
+  // Extract code block between ---jsx and ---
+  const extractCodeBlock = (responseText: string): string | null => {
+    const match = responseText.match(/---jsx([\s\S]*?)---/);
+    return match ? match[1].trim() : null;
+  };
+
+  const handleChatbotSubmit = async () => {
+    if (!chatbotInput.trim()) return;
+
+    // Add user's message to the chat
+    const updatedMessages = [
+      ...messages,
+      { role: "user", content: chatbotInput.trim() },
+    ];
+    setMessages(updatedMessages); // Add user input immediately
+    setChatbotInput(""); // Clear the input box
+    setChatbotLoading(true); // Show loading state
+
+    try {
+      // Send the conversation to the API
+      const response = await fetch("/api/modify-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: updatedMessages }),
+      });
+
+      if (!response.ok) throw new Error("Failed to get a response from AI.");
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let fullResponse = "";
+      let codeExtracted = false;
+
+      // Stream the AI's response
+      while (true) {
+        const { done, value } = await reader?.read()!;
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        fullResponse += chunk;
+
+        // Append the current partial AI response to the chat
+        setMessages((prevMessages) => [
+          ...prevMessages.slice(0, -1), // Keep all previous messages, including user's
+          { role: "assistant", content: fullResponse },
+        ]);
+
+        // Extract code block once and update the React editor
+        if (!codeExtracted) {
+          const extractedCode = extractCodeBlock(fullResponse);
+          if (extractedCode) {
+            setReactCode(extractedCode);
+            codeExtracted = true;
+
+            // Save the updated code to the save-code API
+            await fetch("/api/save-code", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ reactCode: extractedCode }),
+            });
+          }
+        }
+      }
+    } catch (error) {
+      // Add an error message to the chat if the AI fails
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        { role: "assistant", content: "Sorry, I couldn't process your request." },
+      ]);
+    } finally {
+      setChatbotLoading(false); // End loading state
+    }
+  };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div
+      style={{
+        fontFamily: "Inter, sans-serif",
+        minHeight: "100vh",
+        padding: "20px",
+      }}
+    >
+      <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+        <header
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "30px",
+          }}
+        >
+          <div>
+            <h1 style={{ fontSize: "2.5rem", fontWeight: "700" }}>
+              React Preview & Chatbot Assistant
+            </h1>
+            <p style={{ fontSize: "1rem" }}>
+              View, edit, and improve React code using AI assistance
+            </p>
+          </div>
+        </header>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        {loading ? (
+          <div style={{ textAlign: "center", padding: "20px" }}>
+            Loading React Code...
+          </div>
+        ) : error ? (
+          <p style={{ color: "red", textAlign: "center" }}>{error}</p>
+        ) : (
+          <>
+            <div
+              style={{
+                backgroundColor: "#1e1e1e",
+                borderRadius: "8px",
+                overflow: "hidden",
+                marginBottom: "20px",
+              }}
+            >
+              <Sandpack
+                template="react"
+                files={{
+                  "/App.js": {
+                    code: reactCode || "",
+                    active: true,
+                  },
+                }}
+                options={{
+                  showNavigator: false,
+                  showLineNumbers: true,
+                  editorHeight: 400,
+                }}
+                customSetup={{
+                  dependencies: {
+                    react: "^18.0.0",
+                    "react-dom": "^18.0.0",
+                  },
+                }}
+              />
+            </div>
+
+            <section>
+              <div
+                style={{
+                  backgroundColor: "#f9f9f9",
+                  borderRadius: "8px",
+                  padding: "20px",
+                  boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+                }}
+              >
+                <h2>Chatbot</h2>
+                <div
+                  style={{
+                    height: "300px",
+                    overflowY: "scroll",
+                    backgroundColor: "#fff",
+                    padding: "10px",
+                    borderRadius: "8px",
+                    border: "1px solid #ddd",
+                    marginBottom: "20px",
+                  }}
+                >
+                  {messages.map((msg, index) => {
+                    const codeBlock = extractCodeBlock(msg.content);
+                    return (
+                      <div key={index} style={{ marginBottom: "10px" }}>
+                        <strong>{msg.role === "user" ? "You:" : "AI:"}</strong>
+                        <div
+                          style={{
+                            backgroundColor: codeBlock
+                              ? "#1e1e1e"
+                              : "#f1f1f1",
+                            color: codeBlock ? "#d4d4d4" : "#333",
+                            fontFamily: codeBlock ? "monospace" : "inherit",
+                            padding: "10px",
+                            borderRadius: "5px",
+                          }}
+                        >
+                          {codeBlock ? (
+                            codeBlock.split("\n").map((line, i) => (
+                              <div key={i}>{line}</div>
+                            ))
+                          ) : (
+                            <span>{msg.content}</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{ display: "flex", gap: "10px" }}>
+                  <input
+                    type="text"
+                    value={chatbotInput}
+                    onChange={(e) => setChatbotInput(e.target.value)}
+                    placeholder="Type your instructions here..."
+                    style={{
+                      flex: 1,
+                      padding: "10px",
+                      borderRadius: "5px",
+                      border: "1px solid #ddd",
+                    }}
+                  />
+                  <button
+                    onClick={handleChatbotSubmit}
+                    disabled={chatbotLoading}
+                    style={{
+                      padding: "10px 20px",
+                      borderRadius: "5px",
+                      backgroundColor: chatbotLoading ? "#ccc" : "#0070f3",
+                      color: "#fff",
+                      border: "none",
+                      cursor: chatbotLoading ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    {chatbotLoading ? "Loading..." : "Send"}
+                  </button>
+                </div>
+              </div>
+            </section>
+          </>
+        )}
+      </div>
     </div>
   );
 }
