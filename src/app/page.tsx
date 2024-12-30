@@ -1,5 +1,6 @@
 "use client";
 
+import type { JSX } from "react";
 import React, { useState, useEffect } from "react";
 import { Sandpack } from "@codesandbox/sandpack-react";
 
