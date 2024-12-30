@@ -30,30 +30,39 @@ export default function PreviewPage(): JSX.Element {
     fetchReactCode();
   }, []);
 
-  // Extract code block between ---jsx and ---
   const extractCodeBlock = (responseText: string): string | null => {
     const match = responseText.match(/---jsx([\s\S]*?)---/);
     return match ? match[1].trim() : null;
   };
 
+  const splitContent = (content: string) => {
+    const parts = content.split(/---jsx([\s\S]*?)---/);
+    return parts.map((part, index) => {
+      if (index % 2 === 0) {
+        return { type: "text", content: part };
+      } else {
+        return { type: "code", content: part.trim() };
+      }
+    });
+  };
+
   const handleChatbotSubmit = async () => {
     if (!chatbotInput.trim()) return;
 
-    // Add user's message to the chat
     const updatedMessages = [
       ...messages,
       { role: "user", content: chatbotInput.trim() },
+      { role: "assistant", content: "" }, // Placeholder for AI response
     ];
-    setMessages(updatedMessages); // Add user input immediately
-    setChatbotInput(""); // Clear the input box
-    setChatbotLoading(true); // Show loading state
+    setMessages(updatedMessages);
+    setChatbotInput("");
+    setChatbotLoading(true);
 
     try {
-      // Send the conversation to the API
       const response = await fetch("/api/modify-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: updatedMessages }),
+        body: JSON.stringify({ messages: updatedMessages.slice(0, -1) }), // Send user messages only
       });
 
       if (!response.ok) throw new Error("Failed to get a response from AI.");
@@ -63,7 +72,6 @@ export default function PreviewPage(): JSX.Element {
       let fullResponse = "";
       let codeExtracted = false;
 
-      // Stream the AI's response
       while (true) {
         const { done, value } = await reader?.read()!;
         if (done) break;
@@ -71,20 +79,28 @@ export default function PreviewPage(): JSX.Element {
         const chunk = decoder.decode(value, { stream: true });
         fullResponse += chunk;
 
-        // Append the current partial AI response to the chat
-        setMessages((prevMessages) => [
-          ...prevMessages.slice(0, -1), // Keep all previous messages, including user's
-          { role: "assistant", content: fullResponse },
-        ]);
+        setMessages((prevMessages) => {
+          const updatedMessages = [...prevMessages];
+          const lastAssistantMessageIndex = updatedMessages.findLastIndex(
+            (msg) => msg.role === "assistant"
+          );
 
-        // Extract code block once and update the React editor
+          if (lastAssistantMessageIndex !== -1) {
+            updatedMessages[lastAssistantMessageIndex] = {
+              ...updatedMessages[lastAssistantMessageIndex],
+              content: fullResponse,
+            };
+          }
+
+          return updatedMessages;
+        });
+
         if (!codeExtracted) {
           const extractedCode = extractCodeBlock(fullResponse);
           if (extractedCode) {
             setReactCode(extractedCode);
             codeExtracted = true;
 
-            // Save the updated code to the save-code API
             await fetch("/api/save-code", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -94,13 +110,13 @@ export default function PreviewPage(): JSX.Element {
         }
       }
     } catch (error) {
-      // Add an error message to the chat if the AI fails
+      console.error("Error during AI response fetching:", error);
       setMessages((prevMessages) => [
         ...prevMessages,
         { role: "assistant", content: "Sorry, I couldn't process your request." },
       ]);
     } finally {
-      setChatbotLoading(false); // End loading state
+      setChatbotLoading(false);
     }
   };
 
@@ -191,28 +207,47 @@ export default function PreviewPage(): JSX.Element {
                   }}
                 >
                   {messages.map((msg, index) => {
-                    const codeBlock = extractCodeBlock(msg.content);
+                    const parts = splitContent(msg.content);
                     return (
-                      <div key={index} style={{ marginBottom: "10px" }}>
-                        <strong>{msg.role === "user" ? "You:" : "AI:"}</strong>
+                      <div
+                        key={index}
+                        style={{
+                          display: "flex",
+                          justifyContent:
+                            msg.role === "user" ? "flex-end" : "flex-start",
+                          marginBottom: "10px",
+                        }}
+                      >
                         <div
                           style={{
-                            backgroundColor: codeBlock
-                              ? "#1e1e1e"
-                              : "#f1f1f1",
-                            color: codeBlock ? "#d4d4d4" : "#333",
-                            fontFamily: codeBlock ? "monospace" : "inherit",
+                            maxWidth: "70%",
+                            backgroundColor:
+                              msg.role === "user" ? "#0070f3" : "#f1f1f1",
+                            color: msg.role === "user" ? "#fff" : "#333",
                             padding: "10px",
-                            borderRadius: "5px",
+                            borderRadius: "8px",
+                            wordBreak: "break-word",
                           }}
                         >
-                          {codeBlock ? (
-                            codeBlock.split("\n").map((line, i) => (
-                              <div key={i}>{line}</div>
-                            ))
-                          ) : (
-                            <span>{msg.content}</span>
-                          )}
+                          {parts.map((part, i) => (
+                            part.type === "code" ? (
+                              <pre
+                                key={i}
+                                style={{
+                                  backgroundColor: "#272822",
+                                  color: "#f8f8f2",
+                                  padding: "10px",
+                                  borderRadius: "5px",
+                                  overflowX: "auto",
+                                  fontFamily: "monospace",
+                                }}
+                              >
+                                {part.content}
+                              </pre>
+                            ) : (
+                              <p key={i} style={{ margin: 0 }}>{part.content}</p>
+                            )
+                          ))}
                         </div>
                       </div>
                     );
