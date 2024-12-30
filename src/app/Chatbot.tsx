@@ -48,6 +48,7 @@ export default function Chatbot() {
         await new Promise((resolve) => setTimeout(resolve, 100));
       }
     } catch (error) {
+      console.log(error);
       setMessages([
         ...newMessages,
         { role: "assistant", content: "Sorry, I couldn't process your request." },

@@ -15,6 +15,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ message: "React code saved successfully!" });
   } catch (error) {
+    console.error(error);
     return NextResponse.json({ error: "Failed to save React code." }, { status: 500 });
   }
 }

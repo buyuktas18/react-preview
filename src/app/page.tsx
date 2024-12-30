@@ -31,6 +31,7 @@ export default function PreviewPage(): JSX.Element {
         const data = await response.json();
         setReactCode(data.reactCode);
       } catch (err) {
+        console.error(err);
         setError("Error occurred while fetching the code.");
       } finally {
         setLoading(false);
@@ -82,8 +83,12 @@ export default function PreviewPage(): JSX.Element {
       let fullResponse = "";
       let codeExtracted = false;
 
+      if (!reader) {
+        throw new Error("Reader is undefined");
+      }
+
       while (true) {
-        const { done, value } = await reader?.read()!;
+        const { done, value } = await reader.read();
         if (done) break;
 
         const chunk = decoder.decode(value, { stream: true });
