@@ -12,7 +12,17 @@ export default function PreviewPage(): JSX.Element {
   ]);
   const [chatbotInput, setChatbotInput] = useState<string>("");
   const [chatbotLoading, setChatbotLoading] = useState<boolean>(false);
+  const [darkMode, setDarkMode] = useState<boolean>(false);
 
+  // Apply dark/light mode theme on toggle
+  useEffect(() => {
+    document.documentElement.setAttribute(
+      "data-theme",
+      darkMode ? "dark" : "light"
+    );
+  }, [darkMode]);
+
+  // Fetch the current React code
   useEffect(() => {
     async function fetchReactCode() {
       try {
@@ -62,7 +72,7 @@ export default function PreviewPage(): JSX.Element {
       const response = await fetch("/api/modify-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: updatedMessages.slice(0, -1) }), // Send user messages only
+        body: JSON.stringify({ messages: updatedMessages.slice(0, -1) }),
       });
 
       if (!response.ok) throw new Error("Failed to get a response from AI.");
@@ -126,6 +136,8 @@ export default function PreviewPage(): JSX.Element {
         fontFamily: "Inter, sans-serif",
         minHeight: "100vh",
         padding: "20px",
+        backgroundColor: darkMode ? "#1e1e1e" : "#f9f9f9",
+        color: darkMode ? "#f9f9f9" : "#1e1e1e",
       }}
     >
       <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
@@ -145,6 +157,20 @@ export default function PreviewPage(): JSX.Element {
               View, edit, and improve React code using AI assistance
             </p>
           </div>
+          <button
+            onClick={() => setDarkMode(!darkMode)}
+            style={{
+              padding: "10px 20px",
+              borderRadius: "5px",
+              backgroundColor: darkMode ? "#f9f9f9" : "#1e1e1e",
+              color: darkMode ? "#1e1e1e" : "#f9f9f9",
+              border: "none",
+              cursor: "pointer",
+              fontWeight: "600",
+            }}
+          >
+            {darkMode ? "Light Mode" : "Dark Mode"}
+          </button>
         </header>
 
         {loading ? (
