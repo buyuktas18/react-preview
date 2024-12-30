@@ -1,18 +1,17 @@
 {
   "compilerOptions": {
-    "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "target": "esnext", // Use ESNext for modern syntax
+    "lib": ["dom", "dom.iterable", "esnext"], // Keep these libraries
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
     "esModuleInterop": true,
-    "module": "esnext",
-    "moduleResolution": "bundler",
+    "module": "esnext", // Use ESNext for module system
+    "moduleResolution": "node", // Use Node.js resolution
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "react-jsx",
-    "jsxImportSource": "react",
+    "jsx": "react-jsx", // React JSX syntax for React 17+
     "incremental": true,
     "plugins": [
       {
@@ -23,6 +22,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"], // Ensure all relevant files are included
+  "exclude": ["node_modules"] // Exclude unnecessary files
 }
