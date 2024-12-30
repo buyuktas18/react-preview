@@ -97,9 +97,19 @@ export default function PreviewPage(): JSX.Element {
 
         setMessages((prevMessages) => {
           const updatedMessages = [...prevMessages];
-          const lastAssistantMessageIndex = updatedMessages.findLastIndex(
-            (msg) => msg.role === "assistant"
-          );
+          const lastAssistantMessageIndex = [...updatedMessages]
+            .reverse()
+            .findIndex((msg) => msg.role === "assistant");
+
+          if (lastAssistantMessageIndex !== -1) {
+            // Correct the index for the reversed array
+            const actualIndex = updatedMessages.length - 1 - lastAssistantMessageIndex;
+            updatedMessages[actualIndex] = {
+              ...updatedMessages[actualIndex],
+              content: fullResponse,
+            };
+          }
+
 
           if (lastAssistantMessageIndex !== -1) {
             updatedMessages[lastAssistantMessageIndex] = {
