@@ -5,6 +5,8 @@ if (!process.env.ANTHROPIC_API_KEY) {
   throw new Error("ANTHROPIC_API_KEY is not defined");
 }
 
+console.log("ANTHROPIC_API_KEY:", process.env.ANTHROPIC_API_KEY);
+
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
