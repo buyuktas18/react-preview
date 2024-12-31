@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Fetch the current React code from the save-code API
-    const savedCodeResponse = await fetch("http://localhost:3000/api/save-code", {
+    const savedCodeResponse = await fetch("https://react-preview-zu7d.vercel.app/api/save-code", {
       method: "GET",
     });
 
@@ -86,7 +86,7 @@ Do not forget to include the export default statement at the end.
           const cleanedReactCode = match ? match[1].trim() : null;
 
           // Save the updated code back to the save-code API
-          fetch("http://localhost:3000/api/save-code", {
+          fetch("https://react-preview-zu7d.vercel.app/api/save-code", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ reactCode: cleanedReactCode }),
