@@ -1,8 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-let savedCode = "";
-
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { reactCode } = body;
@@ -11,7 +9,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "React code is required." }, { status: 400 });
     }
 
-    savedCode = reactCode; // Save the React code
+    // Save React code to environment variable
+    process.env.SAVED_CODE = reactCode;
 
     return NextResponse.json({ message: "React code saved successfully!" });
   } catch (error) {
@@ -21,9 +20,16 @@ export async function POST(req: Request) {
 }
 
 export async function GET() {
-  if (!savedCode) {
-    return NextResponse.json({ error: "No saved code found." }, { status: 404 });
-  }
+  try {
+    const savedCode = process.env.SAVED_CODE || "";
 
-  return NextResponse.json({ reactCode: savedCode });
+    if (!savedCode) {
+      return NextResponse.json({ error: "No saved code found." }, { status: 404 });
+    }
+
+    return NextResponse.json({ reactCode: savedCode });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ error: "Failed to fetch React code." }, { status: 500 });
+  }
 }
