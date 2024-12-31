@@ -6,6 +6,7 @@ if (!process.env.ANTHROPIC_API_KEY) {
 }
 
 console.log("ANTHROPIC_API_KEY:", process.env.ANTHROPIC_API_KEY);
+console.log("test");
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
