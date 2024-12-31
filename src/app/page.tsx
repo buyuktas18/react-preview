@@ -60,7 +60,8 @@ export default function PreviewPage(): JSX.Element {
 
   const handleChatbotSubmit = async () => {
     if (!chatbotInput.trim()) return;
-
+  
+    // Add user's message to the chat
     const updatedMessages = [
       ...messages,
       { role: "user", content: chatbotInput.trim() },
@@ -69,64 +70,55 @@ export default function PreviewPage(): JSX.Element {
     setMessages(updatedMessages);
     setChatbotInput("");
     setChatbotLoading(true);
-
+  
     try {
       const response = await fetch("/api/modify-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: updatedMessages.slice(0, -1) }),
+        body: JSON.stringify({ messages: updatedMessages.slice(0, -1) }), // Exclude placeholder message
       });
-
+  
       if (!response.ok) throw new Error("Failed to get a response from AI.");
-
+  
       const reader = response.body?.getReader();
       const decoder = new TextDecoder("utf-8");
       let fullResponse = "";
       let codeExtracted = false;
-
+  
       if (!reader) {
         throw new Error("Reader is undefined");
       }
-
+  
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-
+  
         const chunk = decoder.decode(value, { stream: true });
         fullResponse += chunk;
-
+  
         setMessages((prevMessages) => {
           const updatedMessages = [...prevMessages];
-          const lastAssistantMessageIndex = [...updatedMessages]
-            .reverse()
-            .findIndex((msg) => msg.role === "assistant");
-
-          if (lastAssistantMessageIndex !== -1) {
-            // Correct the index for the reversed array
-            const actualIndex = updatedMessages.length - 1 - lastAssistantMessageIndex;
-            updatedMessages[actualIndex] = {
-              ...updatedMessages[actualIndex],
-              content: fullResponse,
-            };
+  
+          // Find the last assistant message manually
+          for (let i = updatedMessages.length - 1; i >= 0; i--) {
+            if (updatedMessages[i].role === "assistant") {
+              updatedMessages[i] = {
+                ...updatedMessages[i],
+                content: fullResponse,
+              };
+              break; // Stop after updating the last assistant message
+            }
           }
-
-
-          if (lastAssistantMessageIndex !== -1) {
-            updatedMessages[lastAssistantMessageIndex] = {
-              ...updatedMessages[lastAssistantMessageIndex],
-              content: fullResponse,
-            };
-          }
-
+  
           return updatedMessages;
         });
-
+  
         if (!codeExtracted) {
           const extractedCode = extractCodeBlock(fullResponse);
           if (extractedCode) {
             setReactCode(extractedCode);
             codeExtracted = true;
-
+  
             await fetch("/api/save-code", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -145,6 +137,7 @@ export default function PreviewPage(): JSX.Element {
       setChatbotLoading(false);
     }
   };
+  
 
   return (
     <div
@@ -296,33 +289,39 @@ export default function PreviewPage(): JSX.Element {
                   })}
                 </div>
                 <div style={{ display: "flex", gap: "10px" }}>
-                  <input
-                    type="text"
-                    value={chatbotInput}
-                    onChange={(e) => setChatbotInput(e.target.value)}
-                    placeholder="Type your instructions here..."
-                    style={{
-                      flex: 1,
-                      padding: "10px",
-                      borderRadius: "5px",
-                      border: "1px solid #ddd",
-                    }}
-                  />
-                  <button
-                    onClick={handleChatbotSubmit}
-                    disabled={chatbotLoading}
-                    style={{
-                      padding: "10px 20px",
-                      borderRadius: "5px",
-                      backgroundColor: chatbotLoading ? "#ccc" : "#0070f3",
-                      color: "#fff",
-                      border: "none",
-                      cursor: chatbotLoading ? "not-allowed" : "pointer",
-                    }}
-                  >
-                    {chatbotLoading ? "Loading..." : "Send"}
-                  </button>
-                </div>
+  <input
+    type="text"
+    value={chatbotInput}
+    onChange={(e) => setChatbotInput(e.target.value)}
+    onKeyDown={(e) => {
+      if (e.key === "Enter" && !chatbotLoading) {
+        handleChatbotSubmit();
+      }
+    }}
+    placeholder="Type your instructions here..."
+    style={{
+      flex: 1,
+      padding: "10px",
+      borderRadius: "5px",
+      border: "1px solid #ddd",
+    }}
+  />
+  <button
+    onClick={handleChatbotSubmit}
+    disabled={chatbotLoading}
+    style={{
+      padding: "10px 20px",
+      borderRadius: "5px",
+      backgroundColor: chatbotLoading ? "#ccc" : "#0070f3",
+      color: "#fff",
+      border: "none",
+      cursor: chatbotLoading ? "not-allowed" : "pointer",
+    }}
+  >
+    {chatbotLoading ? "Loading..." : "Send"}
+  </button>
+</div>
+
               </div>
             </section>
           </>
