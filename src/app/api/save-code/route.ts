@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import Redis from "ioredis";
 
+if (!process.env.REDIS_URL) {
+  throw new Error("REDIS_URL is not defined");
+}
+
 // Redis bağlantısını başlat
-const redis = new Redis(process.env.REDIS_URL || "default"); // Çevresel değişkenden URL alın
+const redis = new Redis(process.env.REDIS_URL); // Çevresel değişkenden URL alın
 
 const REDIS_KEY = "savedReactCode";
 
