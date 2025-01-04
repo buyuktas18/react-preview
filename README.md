@@ -55,7 +55,7 @@ React Previewer simplifies the React development process by integrating:
 - **Frontend**: React.js, Next.js
 - **UI Components**: Sandpack Code Editor, Custom Themes
 - **Styling**: TailwindCSS, Inline Styles
-- **AI Integration**: OpenAI/Anthropic API
+- **AI Integration**: Anthropic API
 - **Figma Integration**: Figma plugin for design-to-code conversion
 
 ---
@@ -129,7 +129,7 @@ npm start
 ## Figma Plugin Integration
 
 The Figma plugin extracts design data and converts it into React code. To use:
-1. Install the Figma plugin from [Figma Plugin URL].
+1. Install the Figma plugin from [[Figma Plugin URL](https://github.com/buyuktas18/figma-to-react-plugin.git)].
 2. Select a frame in Figma.
 3. Click "Generate React Code" in the plugin interface.
 4. The generated code is sent to the React Previewer for real-time editing and preview.
