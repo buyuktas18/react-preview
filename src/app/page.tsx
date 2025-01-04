@@ -132,8 +132,9 @@ export default function PreviewPage(): JSX.Element {
           key={index}
           style={{
             backgroundColor: darkMode ? "#000" : "#f4f4f4",
-            color: darkMode ? "#fff" : "#000",
+            color: darkMode ? "#58dc48" : "#000",
             padding: "10px",
+            fontSize: "0.6rem",
             borderRadius: "5px",
             whiteSpace: "pre-wrap",
             overflowX: "auto",
@@ -375,6 +376,7 @@ export default function PreviewPage(): JSX.Element {
             flexDirection: "column",
             padding: "20px",
             overflow: "hidden",
+            height: "(100vh- 120px)",
           }}
         >
           <div
